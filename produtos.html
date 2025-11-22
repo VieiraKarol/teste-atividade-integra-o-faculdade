@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Produtos</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <div class="container mt-4">
+    <h2 class="mb-4">Cadastro / Listagem de Produtos</h2>
+
+    <div class="card mb-4">
+      <div class="card-header">Cadastrar Produto</div>
+      <div class="card-body">
+        <form id="formProduto">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="nome" class="form-label">Nome do Produto</label>
+              <input type="text" class="form-control" id="nome" name="nome" placeholder="Insira o nome do produto" required>
+            </div>
+            <div class="col-md-6">
+              <label for="codigo_barras" class="form-label">Código de Barras</label>
+              <input type="text" class="form-control" id="codigo_barras" name="codigo_barras" placeholder="Insira o código de barras" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="descricao" class="form-label">Descrição</label>
+            <textarea class="form-control" id="descricao" name="descricao" rows="2" placeholder="Descreva brevemente o produto" required></textarea>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-3">
+              <label for="quantidade" class="form-label">Quantidade em Estoque</label>
+              <input type="number" class="form-control" id="quantidade" name="quantidade" placeholder="Quantidade disponível">
+            </div>
+            <div class="col-md-3">
+              <label for="categoria" class="form-label">Categoria</label>
+              <select class="form-select" id="categoria" name="categoria" required>
+                <option value="" selected>Selecione...</option>
+                <option>Eletrônicos</option>
+                <option>Alimentos</option>
+                <option>Vestuário</option>
+                <option>Outro</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="validade" class="form-label">Data de Validade</label>
+              <input type="date" class="form-control" id="validade" name="validade">
+            </div>
+            <div class="col-md-3">
+              <label for="imagem" class="form-label">Imagem do Produto</label>
+              <input type="file" class="form-control" id="imagem" name="imagem">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Cadastrar</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Produtos Cadastrados</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped" id="tabelaProdutos">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nome</th>
+                <th>Cód. Barras</th>
+                <th>Descrição</th>
+                <th>Qtd</th>
+                <th>Categoria</th>
+                <th>Validade</th>
+                <th>Imagem</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  document.getElementById("formProduto").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+    // se a API aceitar multipart ou base64, pode adaptar
+    const obj = {
+      nome: formData.get("nome"),
+      codigo_barras: formData.get("codigo_barras"),
+      descricao: formData.get("descricao"),
+      quantidade: formData.get("quantidade"),
+      categoria: formData.get("categoria"),
+      validade: formData.get("validade"),
+      // para imagem: pode enviar base64, ou tratar upload separado
+    };
+
+    const resp = await fetch("../api/produtos.php", {
+      method: "POST",
+      body: JSON.stringify(obj),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    const json = await resp.json();
+    alert(json.mensagem || json.erro);
+    if (resp.ok) {
+      carregarProdutos();
+      form.reset();
+    }
+  });
+
+  async function carregarProdutos() {
+    const resp = await fetch("../api/produtos.php"); // GET para pegar lista
+    const lista = await resp.json();
+    const tbody = document.querySelector("#tabelaProdutos tbody");
+    tbody.innerHTML = "";
+    lista.forEach((p, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${p.nome}</td>
+        <td>${p.codigo_barras}</td>
+        <td>${p.descricao}</td>
+        <td>${p.quantidade ?? ""}</td>
+        <td>${p.categoria}</td>
+        <td>${p.validade ?? ""}</td>
+        <td>${p.imagem ? `<img src="${p.imagem}" alt="" width="50">` : ""}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  carregarProdutos();
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Associação Produto-Fornecedor</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <div class="container mt-4">
+    <h2 class="mb-4">Associação de Fornecedor a Produto</h2>
+
+    <div class="card mb-4">
+      <div class="card-header">Associar Fornecedor</div>
+      <div class="card-body">
+        <form id="formAssociacao">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="produto_id" class="form-label">Produto</label>
+              <select class="form-select" id="produto_id" name="produto_id" required>
+                <option value="">Selecione um produto</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="fornecedor_id" class="form-label">Fornecedor</label>
+              <select class="form-select" id="fornecedor_id" name="fornecedor_id" required>
+                <option value="">Selecione um fornecedor</option>
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-success">Associar</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">Associações Existentes</div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-striped" id="tabelaAssociacao">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Produto</th>
+                <th>Fornecedor</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+  document.getElementById("formAssociacao").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const data = {
+      produto_id: document.getElementById("produto_id").value,
+      fornecedor_id: document.getElementById("fornecedor_id").value
+    };
+
+    const resp = await fetch("../api/associacao.php", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" }
+    });
+    const json = await resp.json();
+    alert(json.mensagem || json.erro);
+    if (resp.ok) {
+      carregarAssociacoes();
+    }
+  });
+
+  async function carregarAssociacoes() {
+    const resp = await fetch("../api/associacao.php"); // GET para pegar lista de associações
+    const lista = await resp.json();
+    const tbody = document.querySelector("#tabelaAssociacao tbody");
+    tbody.innerHTML = "";
+
+    lista.forEach((a, i) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${i+1}</td>
+        <td>${a.produto_nome}</td>
+        <td>${a.fornecedor_nome}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="desassociar(${a.produto_id}, ${a.fornecedor_id})">Desassociar</button></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  async function carregarSelects() {
+    // Pegar produtos
+    const respP = await fetch("../api/produtos.php");
+    const produtos = await respP.json();
+    const selectP = document.getElementById("produto_id");
+    produtos.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.text = p.nome;
+      selectP.appendChild(opt);
+    });
+
+    // Pegar fornecedores
+    const respF = await fetch("../api/fornecedores.php");
+    const fornecedores = await respF.json();
+    const selectF = document.getElementById("fornecedor_id");
+    fornecedores.forEach(f => {
+      const opt = document.createElement("option");
+      opt.value = f.id;
+      opt.text = f.nome_empresa;
+      selectF.appendChild(opt);
+    });
+  }
+
+  async function desassociar(produto_id, fornecedor_id) {
+    const resp = await fetch(`../api/associacao.php?produto_id=${produto_id}&fornecedor_id=${fornecedor_id}`, {
+      method: "DELETE"
+    });
+    const json = await resp.json();
+    alert(json.mensagem || json.erro);
+    carregarAssociacoes();
+  }
+
+  // Inicializa
+  carregarSelects();
+  carregarAssociacoes();
+  </script>
+
+</body>
+</html>
